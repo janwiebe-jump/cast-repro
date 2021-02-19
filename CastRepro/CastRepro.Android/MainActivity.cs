@@ -12,6 +12,7 @@ using AndroidX.MediaRouter.Media;
 using Android.Gms.Cast;
 using Android.Content;
 using Plugin.CurrentActivity;
+using Android.Gms.Cast.Framework.Media;
 
 namespace CastRepro.Droid
 {
@@ -22,6 +23,8 @@ namespace CastRepro.Droid
         private MediaRouteSelectorCallback callback;
         private MediaRouteSelector mediaRouteSelector;
         private MediaRouter mediaRouter;
+        private CastSession castSession;
+        private RemoteMediaClient client;
 
         public MediaRouteSelector MediaRouteSelector => mediaRouteSelector;
 
@@ -55,8 +58,9 @@ namespace CastRepro.Droid
 
             mediaRouteSelector = new MediaRouteSelector.Builder()
                 // These are the framework-supported intents
-                .AddControlCategory(MediaControlIntent.CategoryRemotePlayback)
-                .AddControlCategory(MediaControlIntent.CategoryLiveAudio)
+                //.AddControlCategory(MediaControlIntent.CategoryRemotePlayback)
+                //.AddControlCategory(MediaControlIntent.cate)
+                //.AddControlCategory(MediaControlIntent.CategoryLiveAudio)
                 .AddControlCategory(CastMediaControlIntent.CategoryForCast(CastMediaControlIntent.DefaultMediaReceiverApplicationId))
                 .Build();
 
@@ -96,6 +100,32 @@ namespace CastRepro.Droid
 
         public void OnSessionStarted(Java.Lang.Object session, string sessionId)
         {
+            castSession = session as CastSession;
+            client = castSession.RemoteMediaClient;
+
+            client.RegisterCallback(new ClientCallback(client));
+
+            // Play the stuff!
+
+            MediaLoadOptions.Builder builder = new MediaLoadOptions.Builder();
+            builder.SetAutoplay(true);
+
+            client.Load(buildMediaInfo(), builder.Build());
+        }
+
+        public MediaInfo buildMediaInfo()
+        {
+            MediaMetadata songData = new MediaMetadata(MediaMetadata.MediaTypeMusicTrack);
+            songData.PutString(MediaMetadata.KeyTitle, "lol");
+
+
+
+            MediaInfo.Builder builder = new MediaInfo.Builder("http://www.hochmuth.com/mp3/Haydn_Cello_Concerto_D-1.mp3");
+            builder.SetStreamType(MediaInfo.StreamTypeBuffered);
+            builder.SetContentType("audio/mp3");
+            builder.SetMetadata(songData);
+
+            return builder.Build();
         }
 
         public void OnSessionStarting(Java.Lang.Object session)
